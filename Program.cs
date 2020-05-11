@@ -4,30 +4,39 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Xml.Serialization;
 
 namespace Practice2
 {
+    [XmlInclude(typeof(Contributor))]
+    [XmlInclude(typeof(Debtor))]
+    [XmlInclude(typeof(Organisation))]
     /// <summary>
     /// Класс Клиент банка</summary>
     /// <remarks>
     /// Абстрактный класс</remarks>
-    abstract class Client
+    public abstract class Client
     {
         /// <summary>
         /// Хранилище для свойства имени или названия</summary>
-        protected string Name;
+        public string Name;
         /// <summary>
         /// Хранилище для свойства даты начала работы с банком</summary>
-        protected DateTime Date;
+        public DateTime Date;
         /// <summary>
         /// Хранилище для свойства величины баланса или займа клиента</summary>
-        protected int Amount;
+        public int Amount;
+        /// <summary>
+        /// Конструктор класса. </summary>
+        public Client()
+        { }
         /// <summary>
         /// Конструктор класса</summary>
         /// <param name="Name"> Имя или название</param>
         /// <param name="Date"> Дата начала работы с банком</param>
         /// <param name="Amount"> Величина баланса или займа клиента</param>
-        protected Client (string Name, DateTime Date, int Amount)
+        public Client (string Name, DateTime Date, int Amount)
         {
             this.Name = Name;
             this.Date = Date;
@@ -52,11 +61,15 @@ namespace Practice2
     /// Класс Вкладчик</summary>
     /// <remarks>
     /// Хранит информацию о клиенте банка, может выдать информацию на экран</remarks>
-    class Contributor : Client
+    public class Contributor : Client
     {
         /// <summary>
         /// Хранилище для свойства процента по вкладу</summary>
-        protected double InterestRate;
+        public double InterestRate;
+        /// <summary>
+        /// Конструктор класса. </summary>
+        public Contributor()
+        { }
         /// <summary>
         /// Конструктор класса. </summary>
         /// <param name="Name"> Имя</param>
@@ -85,14 +98,18 @@ namespace Practice2
     /// Класс Заемщик</summary>
     /// <remarks>
     /// Хранит информацию о клиенте банка, может выдать информацию на экран</remarks>
-    class Debtor : Client
+    public class Debtor : Client
     {
         /// <summary>
         /// Хранилище для свойства остатка долга</summary>
-        private int LoanBalance;
+        public int LoanBalance;
         /// <summary>
         /// Хранилище для свойства процента по займу</summary>
-        private double InterestRate;
+        public double InterestRate;
+        /// <summary>
+        /// Конструктор класса. </summary>
+        public Debtor()
+        { }
         /// <summary>
         /// Конструктор класса. </summary>
         /// <param name="Name"> Имя</param>
@@ -124,11 +141,15 @@ namespace Practice2
     /// Класс Организация</summary>
     /// <remarks>
     /// Хранит информацию о клиенте банка, может выдать информацию на экран</remarks>
-    class Organisation : Client
+    public class Organisation : Client
     {
         /// <summary>
         /// Хранилище для свойства номер счета</summary>
-        private readonly int Id;
+        public int Id;
+        /// <summary>
+        /// Конструктор класса. </summary>
+        public Organisation()
+        { }
         /// <summary>
         /// Конструктор класса. </summary>
         /// <param name="Name"> Название</param>
@@ -161,6 +182,8 @@ namespace Practice2
         /// <param name="args"> Список аргументов командной строки</param>
         static void Main(string[] args)
         {
+            Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
+            Trace.AutoFlush = true;
             int n = 0;
             DateTime date;
             using (StreamReader sr = new StreamReader(".../input.txt"))
@@ -171,6 +194,7 @@ namespace Practice2
                 }
             }
             Client[] ClientArray = new Client[n];
+            XmlSerializer formatter = new XmlSerializer(typeof(Client[]));
             using (StreamReader sr = new StreamReader(".../input.txt"))
             {
                 int c = 0;
@@ -182,22 +206,38 @@ namespace Practice2
                     {
                         case "Вкладчик":
                             {
+                                Trace.Indent();
+                                Trace.WriteLine("Entering Contributor Constructor");
                                 ClientArray[c] = new Contributor(LineArray[1], Convert.ToDateTime(LineArray[2]), Convert.ToInt32(LineArray[3]), Convert.ToDouble(LineArray[4]));
+                                Trace.WriteLine("Exiting Contributor Constructor");
+                                Trace.Unindent();
                                 break;
                             }
                         case "Заемщик":
                             {
+                                Trace.Indent();
+                                Trace.WriteLine("Entering Debtor Constructor");
                                 ClientArray[c] = new Debtor(LineArray[1], Convert.ToDateTime(LineArray[2]), Convert.ToInt32(LineArray[3]), Convert.ToDouble(LineArray[4]), Convert.ToInt32(LineArray[5]));
+                                Trace.WriteLine("Exiting Debtor Constructor");
+                                Trace.Unindent();
                                 break;
                             }
                         case "Организация":
                             {
+                                Trace.Indent();
+                                Trace.WriteLine("Entering Organization Constructor");
                                 ClientArray[c] = new Organisation(LineArray[1], Convert.ToDateTime(LineArray[2]), Convert.ToInt32(LineArray[3]), Convert.ToInt32(LineArray[4]));
+                                Trace.WriteLine("Exiting Organization Constructor");
+                                Trace.Unindent();
                                 break;
                             }
                     }
                     c++;
                 }
+            }
+            using (FileStream fs = new FileStream("clients.xml", FileMode.OpenOrCreate))
+            {
+                formatter.Serialize(fs, ClientArray);
             }
             Console.WriteLine(String.Format(
                         "{0}{1, 30}|{2, 20}|{3, 20}|{4, 20}",
@@ -210,7 +250,13 @@ namespace Practice2
             for (int i = 0; i < n; i++)
             {
                 if (ClientArray[i] is Contributor)
+                {
+                    Trace.Indent();
+                    Trace.WriteLine("Entering Client method PrintInfo");
                     ClientArray[i].PrintInfo();
+                    Trace.WriteLine("Exiting Client method PrintInfo");
+                    Trace.Unindent();
+                }
             }
             Console.WriteLine();
             Console.WriteLine(String.Format(
@@ -225,7 +271,13 @@ namespace Practice2
             for (int i = 0; i < n; i++)
             {
                 if (ClientArray[i] is Debtor)
+                {
+                    Trace.Indent();
+                    Trace.WriteLine("Entering Client method PrintInfo");
                     ClientArray[i].PrintInfo();
+                    Trace.WriteLine("Exiting Client method PrintInfo");
+                    Trace.Unindent();
+                }
             }
             Console.WriteLine();
             Console.WriteLine(String.Format(
@@ -239,7 +291,13 @@ namespace Practice2
             for (int i = 0; i < n; i++)
             {
                 if (ClientArray[i] is Organisation)
+                {
+                    Trace.Indent();
+                    Trace.WriteLine("Entering Client method PrintInfo");
                     ClientArray[i].PrintInfo();
+                    Trace.WriteLine("Exiting Client method PrintInfo");
+                    Trace.Unindent();
+                }
             }
             Console.WriteLine();
             Console.WriteLine("Введите дату, по которой хотите найти клиента (mm/dd/yy):");
@@ -255,7 +313,13 @@ namespace Practice2
             for (int i = 0; i < n; i++)
             {
                 if (ClientArray[i] is Contributor)
+                {
+                    Trace.Indent();
+                    Trace.WriteLine("Entering Client method PrintInfo");
                     ClientArray[i].PrintInfo(date);
+                    Trace.WriteLine("Exiting Client method PrintInfo");
+                    Trace.Unindent();
+                }
             }
             Console.WriteLine();
             Console.WriteLine(String.Format(
@@ -270,7 +334,13 @@ namespace Practice2
             for (int i = 0; i < n; i++)
             {
                 if (ClientArray[i] is Debtor)
+                {
+                    Trace.Indent();
+                    Trace.WriteLine("Entering Client method PrintInfo");
                     ClientArray[i].PrintInfo(date);
+                    Trace.WriteLine("Exiting Client method PrintInfo");
+                    Trace.Unindent();
+                }
             }
             Console.WriteLine();
             Console.WriteLine(String.Format(
@@ -284,8 +354,15 @@ namespace Practice2
             for (int i = 0; i < n; i++)
             {
                 if (ClientArray[i] is Organisation)
+                {
+                    Trace.Indent();
+                    Trace.WriteLine("Entering Client method PrintInfo");
                     ClientArray[i].PrintInfo(date);
+                    Trace.WriteLine("Exiting Client method PrintInfo");
+                    Trace.Unindent();
+                }
             }
+            Console.ReadKey();
         }
     }
 }
